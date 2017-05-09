@@ -4,8 +4,11 @@ window.onload = function() {
     document.addEventListener('keydown', keyDownHandler, false);
     document.addEventListener('keyup', keyUpHandler, false);
 
-    let canvas = document.getElementById('main-canvas'),
+    let canvas = document.createElement('canvas'),
         ctx = canvas.getContext("2d");
+
+    canvas.id = 'main-canvas';
+    document.body.appendChild(canvas);
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -14,40 +17,36 @@ window.onload = function() {
         paddleWidth = canvas.width/9,
         paddleX = (canvas.width - paddleWidth)/2;
 
-    let brickRowCount = 3,
-        brickPadding = 10,
+    let brickPadding = 10,
         brickColumnCount = 8,
         brickWidth = (canvas.width - 10*brickPadding) / 8,
         brickHeight = 20,
+        brickRowCount = (canvas.height / 6) / brickHeight,
         brickOffsetTop = 30,
         brickOffsetLeft = 15;
 
-    let bricks = [];
-    for(col = 0; col < brickColumnCount; col++) {
-        bricks[col] = [];
-        for(row = 0; row < brickRowCount; row++) {
-            bricks[col][row] = { x: 0, y: 0, show: 1 };
-        }
-    }
+    let rightKeyPressed = false,
+        leftKeyPressed = false;
 
-    let rightPressed = false,
-        leftPressed = false;
+    let ball_x = canvas.width/2,
+        ball_y = canvas.height - 30,
+        ball_dx = 4,
+        ball_dy = -4;
 
-    let x = canvas.width/2,
-        y = canvas.height - 30,
-        dx = 4,
-        dy = -4;
     let ballRadius = 10;
+    let bricksArr = []
+
+    initBricksArr();
 
     function drawBricks() {
-        for(col = 0; col < brickColumnCount; col++) {
-            for(row = 0 ; row < brickRowCount; row++) {
-                let b = bricks[col][row];
+        for(let col = 0; col < brickColumnCount; col++) {
+            for(let row = 0 ; row < brickRowCount; row++) {
+                let b = bricksArr[col][row];
                 if (b.show == 1) {
-                    let brickX = (col * (brickWidth+brickPadding)) + brickOffsetLeft;
-                    let brickY = (row * (brickHeight+brickPadding)) + brickOffsetTop;
-                    bricks[col][row].x = brickX;
-                    bricks[col][row].y = brickY;
+                    let brickX = (col * (brickWidth + brickPadding)) + brickOffsetLeft;
+                    let brickY = (row * (brickHeight + brickPadding)) + brickOffsetTop;
+                    bricksArr[col][row].x = brickX;
+                    bricksArr[col][row].y = brickY;
                     ctx.beginPath();
                     ctx.rect(brickX, brickY, brickWidth, brickHeight);
                     ctx.fillStyle = "#b8cedd";
@@ -60,7 +59,7 @@ window.onload = function() {
 
     function drawBall() {
         ctx.beginPath();
-        ctx.arc(x, y, ballRadius, 0, Math.PI*2);
+        ctx.arc(ball_x, ball_y, ballRadius, 0, Math.PI*2);
         ctx.fillStyle = "#829fdd";
         ctx.fill();
         ctx.closePath();
@@ -81,27 +80,28 @@ window.onload = function() {
         drawPaddle();
         collisionDetection();
 
-        if (x + dx > canvas.width-ballRadius || x + dx < ballRadius) {
-            dx = -dx;
+        if (ball_x + ball_dx > canvas.width-ballRadius || ball_x + ball_dx < ballRadius) {
+            ball_dx = -ball_dx;
         }
 
-        if (y + dy < ballRadius) {
-            dy = -dy;
-        } else if (y + dy >= canvas.height-ballRadius) {
-            if (x > paddleX && x < paddleX + paddleWidth) {
-                dy = -dy;
+        if (ball_y + ball_dy < ballRadius) {
+            ball_dy = -ball_dy;
+        } else if (ball_y + ball_dy >= canvas.height-ballRadius) {
+            if (ball_x > paddleX && ball_x < paddleX + paddleWidth) {
+                ball_dy = -ball_dy;
             } else {
                 alert("Game Over!");
                 document.location.reload();
             }
         }
-        x += dx;
-        y += dy;
 
-        if(rightPressed && paddleX < canvas.width-paddleWidth) {
+        ball_x += ball_dx;
+        ball_y += ball_dy;
+
+        if(rightKeyPressed && paddleX < canvas.width-paddleWidth) {
             paddleX += 7;
         }
-        else if(leftPressed && paddleX > 0) {
+        else if(leftKeyPressed && paddleX > 0) {
             paddleX -= 7;
         }
     }
@@ -113,29 +113,29 @@ window.onload = function() {
 
     function keyDownHandler(e) {
         if(e.keyCode == 39) {
-            rightPressed = true;
+            rightKeyPressed = true;
         }
         else if(e.keyCode == 37) {
-            leftPressed = true;
+            leftKeyPressed = true;
         }
     }
 
     function keyUpHandler(e) {
         if(e.keyCode == 39) {
-            rightPressed = false;
+            rightKeyPressed = false;
         }
         else if(e.keyCode == 37) {
-            leftPressed = false;
+            leftKeyPressed = false;
         }
     }
 
     function collisionDetection() {
-        for(col = 0; col < brickColumnCount; col++) {
-            for(row = 0; row < brickRowCount; row++) {
-                let currBrick = bricks[col][row];
+        for(let col = 0; col < brickColumnCount; col++) {
+            for(let row = 0; row < brickRowCount; row++) {
+                let currBrick = bricksArr[col][row];
                 if (currBrick.show == 1) {
-                    if(x > currBrick.x && x < currBrick.x + brickWidth && y > currBrick.y && y < currBrick.y + brickHeight) {
-                        dy = -dy;
+                    if(ball_x > currBrick.x && ball_x < currBrick.x + brickWidth && ball_y > currBrick.y && ball_y < currBrick.y + brickHeight) {
+                        ball_dy = -ball_dy;
                         currBrick.show = 0;
                     }
                 }
@@ -143,5 +143,16 @@ window.onload = function() {
         }
     }
 
-    setInterval(draw, 8);
+    function initBricksArr() {
+        for(let col = 0; col < brickColumnCount; col++) {
+            bricksArr[col] = [];
+            for(let row = 0; row < brickRowCount; row++) {
+                bricksArr[col][row] = { x: 0, y: 0, show: 1 };
+            }
+        }
+    }
+
+    if (confirm("Press Ok to start!")) {
+        setInterval(draw, 8);
+    }
 }
