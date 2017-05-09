@@ -1,3 +1,7 @@
-# breakout-game
+# Breakout game
 
-![alt text](https://danpora.github.io/breakout-game)
+## Good old Breakout game developed using Vanilla JS. 
+
+[Live Demo](https://danpora.github.io/breakout-game)
+
+
